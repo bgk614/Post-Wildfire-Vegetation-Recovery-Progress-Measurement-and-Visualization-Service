@@ -1,85 +1,102 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <stdio.h>
 
 using namespace cv;
 using namespace std;
 
+// ì£¼ì˜
+
+void getGreen(Mat src, int& gCount);
+double green_percent(Mat src, int& gCount);
+
 int main() {
 
-    // ÀÌ¹ÌÁö ºÒ·¯¿À±â
-    Mat src = imread("°­¿øµµ.png");  //ÁÖ¿µÀÌ °­¿øµµ ÀÌ¹ÌÁö
+    // ì´ë¯¸ì§€ ë¶ˆëŸ¬ì˜¤ê¸°
+    Mat bef_src = imread("ê°•ì›ë„.png");  //ê³¼ê±°
+    Mat aft_src = imread("ê°•ì›ë„2.png");  //í˜„ì¬
 
-    //ÀÌ¹ÌÁö ºÒ·¯¿À±â ½ÇÆĞÇßÀ» ¶§
-    if (src.empty()) {
-        cerr << "ÀÌ¹ÌÁö¸¦ ºÒ·¯¿Ã ¼ö ¾ø½À´Ï´Ù." << endl;
+    //ì´ë¯¸ì§€ ë¶ˆëŸ¬ì˜¤ê¸° ì‹¤íŒ¨í–ˆì„ ë•Œ
+    if (bef_src.empty() && aft_src.empty()) {
+        cerr << "ì´ë¯¸ì§€ë¥¼ ë¶ˆëŸ¬ì˜¬ ìˆ˜ ì—†ìŠµë‹ˆë‹¤." << endl;
         return -1;
     }
-
-    // ÀÌ¹ÌÁö¸¦ HSV »ö °ø°£À¸·Î º¯È¯
-    Mat hsvImage;
-    cvtColor(src, hsvImage, COLOR_BGR2HSV);
-
-
-    // ÃÊ·Ï»ö ÇÈ¼¿À» ÀúÀåÇÒ ÀÌ¹ÌÁö
-    Mat greenPixels = Mat::zeros(src.size(), CV_8UC1);
-
-
-    //±×¸°Ä«¿îÆ®
-    int greenCount = 0;
+    
+    //ê·¸ë¦° í”½ì…€ ê°œìˆ˜
+    int bef_gCount = 0;
+    int aft_gCount = 0;
+    /*
+    // ì´ë¯¸ì§€ë¥¼ HSV ìƒ‰ ê³µê°„ìœ¼ë¡œ ë³€í™˜
+    Mat bef_hsv, aft_hsv;
+    cvtColor(bef_src, bef_hsv, COLOR_BGR2HSV);
+    cvtColor(aft_src, aft_hsv, COLOR_BGR2HSV);
 
 
-    // HSV¿¡¼­ ÃÊ·Ï»ö ¹üÀ§ ¼³Á¤
-    Scalar lowerGreen = Scalar(30, 30, 30);  // ³·Àº °æ°è°ª (H, S, V)
-    Scalar upperGreen = Scalar(80, 255, 255);  // ³ôÀº °æ°è°ª (H, S, V)
+    // ì´ˆë¡ìƒ‰ í”½ì…€ì„ ì €ì¥í•  ì´ë¯¸ì§€
+    Mat bef_green = Mat::zeros(bef_src.size(), CV_8UC1);
+    Mat aft_green = Mat::zeros(aft_src.size(), CV_8UC1);
+
+    //ê·¸ë¦°ì¹´ìš´íŠ¸
+    int bef_gCount = 0;
+    int aft_gCount = 0;
 
 
-    // ÃÊ·Ï»ö ÇÈ¼¿ ÃßÃâ
-    for (int j = 0; j < src.rows; j++) {
-        for (int i = 0; i < src.cols; i++) {
-            Vec3b hsvPixel = hsvImage.at<Vec3b>(j, i);
+    // HSVì—ì„œ ì´ˆë¡ìƒ‰ ë²”ìœ„ ì„¤ì •
+    Scalar lowerGreen = Scalar(30, 30, 30);  // ë‚®ì€ ê²½ê³„ê°’ (H, S, V)
+    Scalar upperGreen = Scalar(100, 255, 255);  // ë†’ì€ ê²½ê³„ê°’ (H, S, V)
 
-            // HSV¿¡¼­ ÃÊ·Ï»ö ÇÈ¼¿ ¹üÀ§ È®ÀÎ
+
+    // ì´ˆë¡ìƒ‰ í”½ì…€ ì¶”ì¶œ
+    for (int j = 0; j < bef_src.rows; j++) {
+        for (int i = 0; i < bef_src.cols; i++) {
+            Vec3b hsvPixel = bef_hsv.at<Vec3b>(j, i);
+
+            // HSVì—ì„œ ì´ˆë¡ìƒ‰ í”½ì…€ ë²”ìœ„ í™•ì¸
             if ((lowerGreen[0] <= hsvPixel[0] && hsvPixel[0] <= upperGreen[0]) &&
                 (lowerGreen[1] <= hsvPixel[1] && hsvPixel[1] <= upperGreen[1]) &&
                 (lowerGreen[2] <= hsvPixel[2] && hsvPixel[2] <= upperGreen[2])) {
                 
-                // ÃÊ·Ï»ö ÇÈ¼¿ÀÌ¸é ±×¸°Ä«¿îÆ®++
-                greenCount++;
-                greenPixels.at<uchar>(j, i) = 255;  // Èò»öÀ¸·Î ¼³Á¤(¸¶½ºÅ© ÀÌ¹ÌÁö¿¡¼­ ÃÊ·Ï»ö ºÎºĞÀ» ³ªÅ¸³»±â À§ÇØ)
+                // ì´ˆë¡ìƒ‰ í”½ì…€ì´ë©´ ê·¸ë¦°ì¹´ìš´íŠ¸++
+                bef_gCount++;
+                bef_green.at<uchar>(j, i) = 255;  // í°ìƒ‰ìœ¼ë¡œ ì„¤ì •(ë§ˆìŠ¤í¬ ì´ë¯¸ì§€ì—ì„œ ì´ˆë¡ìƒ‰ ë¶€ë¶„ì„ ë‚˜íƒ€ë‚´ê¸° ìœ„í•´)
             }
         }
     }
 
-    cout << "Å½ÁöµÈ ³ì»ö ÇÈ¼¿: " << greenCount << endl;
+    cout << "ì „ì²´ í”½ì…€: " << (bef_src.rows * bef_src.cols) << endl;
+    cout << "íƒì§€ëœ ë…¹ìƒ‰ í”½ì…€: " << bef_gCount << endl;
 
-
-    // ÃÊ·Ï»öÀÌ ¾Æ´Ñ ºÎºĞÀº È¸»öÀ¸·Î ¼³Á¤
-    Mat resultImg = src.clone();
-    for (int j = 0; j < src.rows; j++) {
-        for (int i = 0; i < src.cols; i++) {
-            if (greenPixels.at<uchar>(j, i) == 0) {
-                resultImg.at<Vec3b>(j, i) = Vec3b(128, 128, 128);  // È¸»öÀ¸·Î ¼³Á¤
+    // ì´ˆë¡ìƒ‰ì´ ì•„ë‹Œ ë¶€ë¶„ì€ íšŒìƒ‰ìœ¼ë¡œ ì„¤ì •
+    Mat resultImg = bef_src.clone();
+    for (int j = 0; j < bef_src.rows; j++) {
+        for (int i = 0; i < bef_src.cols; i++) {
+            if (bef_green.at<uchar>(j, i) == 0) {
+                resultImg.at<Vec3b>(j, i) = Vec3b(255, 255, 255);  // íšŒìƒ‰ìœ¼ë¡œ ì„¤ì •
             }
         }
     }
+    */
 
-    // °á°ú ÀÌ¹ÌÁö¸¦ Ç¥½Ã
-    imshow("Original Img", src);
-    imshow("Result Img", resultImg);
+    getGreen(bef_src, bef_gCount);
+    getGreen(aft_src, aft_gCount);
 
-    waitKey(0);
+    /*
+    // ì‚¬ì§„ì˜ ë…¹ì„¹ í¼ì„¼íŠ¸ ê³„ì‚°
+    double green_percent = ((double)bef_gCount /(double)(bef_src.rows * bef_src.cols)) * 100;
+    cout << "íƒì§€ëœ ë…¹ìƒ‰ ë¹„ìœ¨: " << green_percent << "%" << endl;
+    */
 
     return 0;
 }
 
-//greenCount ´Â ¿©·¯ ÃÊ·Ï »çÁøÀÇ ÇÈ¼¿ °ªÀ» ¾Ë¾Æ³»¼­ °¢ »çÁø¸¶´Ù ¸î ÆÛ¼¾Æ® Â÷ÀÌ°¡ ³ª´ÂÁö ¾Ë¾Æ¾ßÇÏ±â ¶§¹®¿¡ ÇÊ¿äÇÏ´Ù....
+//greenCount ëŠ” ì—¬ëŸ¬ ì´ˆë¡ ì‚¬ì§„ì˜ í”½ì…€ ê°’ì„ ì•Œì•„ë‚´ì„œ ê° ì‚¬ì§„ë§ˆë‹¤ ëª‡ í¼ì„¼íŠ¸ ì°¨ì´ê°€ ë‚˜ëŠ”ì§€ ì•Œì•„ì•¼í•˜ê¸° ë•Œë¬¸ì— í•„ìš”í•˜ë‹¤....
 
 /*
 
-ÃÊ¹İ¿¡ ¸¸µç rgb¸¦ ÀÌ¿ëÇÑ »ö ÃßÃâÇÏ±â,,,
-Ç®¹ç ÃÊ¿ø¿¡¼­´Â ·¹µå¶û ºí·çµµ ¾î´ÀÁ¤µµ ³ô¾Æ¾ß ÃÊ·Ï»öÀÌ ´Ù ³ª¿À´Âµ¥
-ÀÌ¹ÌÁö¸¦ °¥»ö ³ª¹«°¡ Á» µé¾î°£ ½£À¸·Î ¹Ù²Ù¸é »¡°£»öÀÌ ³ôÀº Å¿¿¡ ³ª¹«µµ °°ÀÌ ÃßÃâÀÌ µÇ´õ¶ó°í¿ë?
-±×·¡¼­ hsv·Î ÃßÃâÇÏ´Â °ÍÀ¸·Î ¹Ù²å½À´Ï´Ù.
+ì´ˆë°˜ì— ë§Œë“  rgbë¥¼ ì´ìš©í•œ ìƒ‰ ì¶”ì¶œí•˜ê¸°,,,
+í’€ë°­ ì´ˆì›ì—ì„œëŠ” ë ˆë“œë‘ ë¸”ë£¨ë„ ì–´ëŠì •ë„ ë†’ì•„ì•¼ ì´ˆë¡ìƒ‰ì´ ë‹¤ ë‚˜ì˜¤ëŠ”ë°
+ì´ë¯¸ì§€ë¥¼ ê°ˆìƒ‰ ë‚˜ë¬´ê°€ ì¢€ ë“¤ì–´ê°„ ìˆ²ìœ¼ë¡œ ë°”ê¾¸ë©´ ë¹¨ê°„ìƒ‰ì´ ë†’ì€ íƒ“ì— ë‚˜ë¬´ë„ ê°™ì´ ì¶”ì¶œì´ ë˜ë”ë¼ê³ ìš©?
+ê·¸ë˜ì„œ hsvë¡œ ì¶”ì¶œí•˜ëŠ” ê²ƒìœ¼ë¡œ ë°”ê¿¨ìŠµë‹ˆë‹¤.
 
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -89,16 +106,16 @@ using namespace std;
 
 void main()
 {
-    //ÀÌ¹ÌÁö ºÒ·¯¿À±â
-    Mat src = imread("¹Ì±¹2017.png");
+    //ì´ë¯¸ì§€ ë¶ˆëŸ¬ì˜¤ê¸°
+    Mat src = imread("ë¯¸êµ­2017.png");
 
-    //ÀÌ¹ÌÁö ºÒ·¯¿À±â ½ÇÆĞ½Ã
+    //ì´ë¯¸ì§€ ë¶ˆëŸ¬ì˜¤ê¸° ì‹¤íŒ¨ì‹œ
     if (src.empty()) {
-        cerr << "ÀÌ¹ÌÁö¸¦ ºÒ·¯¿Ã ¼ö ¾ø½À´Ï´Ù!!!" << endl;
+        cerr << "ì´ë¯¸ì§€ë¥¼ ë¶ˆëŸ¬ì˜¬ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!!!" << endl;
         return;
     }
 
-    //ÀÌ¹ÌÁöÀÇ Æø°ú ³ôÀÌ
+    //ì´ë¯¸ì§€ì˜ í­ê³¼ ë†’ì´
     int w = src.cols;
     int h = src.rows;
 
@@ -127,11 +144,11 @@ void main()
         }
     }
 
-    cout << "Å½ÁöµÈ ³ì»ö ÇÈ¼¿: " << greenCount << endl;
+    cout << "íƒì§€ëœ ë…¹ìƒ‰ í”½ì…€: " << greenCount << endl;
 
 
 
-    // °á°ú ÀÌ¹ÌÁö Ç¥½Ã
+    // ê²°ê³¼ ì´ë¯¸ì§€ í‘œì‹œ
 
         imshow("green", src);
 
@@ -142,3 +159,63 @@ void main()
 
 
 */
+
+int greenCount(int& g_Count) {
+    g_Count++;
+    return g_Count;
+}
+
+void getGreen(Mat src, int& gCount) {
+    // ì´ë¯¸ì§€ë¥¼ HSV ìƒ‰ ê³µê°„ìœ¼ë¡œ ë³€í™˜
+    Mat src_hsv;
+    cvtColor(src, src_hsv, COLOR_BGR2HSV);
+
+    // ì´ˆë¡ìƒ‰ í”½ì…€ì„ ì €ì¥í•  ì´ë¯¸ì§€
+    Mat src_green = Mat::zeros(src_hsv.size(), CV_8UC1);
+
+    // HSVì—ì„œ ì´ˆë¡ìƒ‰ ë²”ìœ„ ì„¤ì •
+    Scalar lowerGreen = Scalar(30, 30, 30);  // ë‚®ì€ ê²½ê³„ê°’ (H, S, V)
+    Scalar upperGreen = Scalar(90, 255, 255);  // ë†’ì€ ê²½ê³„ê°’ (H, S, V)
+
+    for (int j = 0; j < src.rows; j++) {
+        for (int i = 0; i < src.cols; i++) {
+            Vec3b hsvPixel = src_hsv.at<Vec3b>(j, i);
+
+            // HSVì—ì„œ ì´ˆë¡ìƒ‰ í”½ì…€ ë²”ìœ„ í™•ì¸
+            if ((lowerGreen[0] <= hsvPixel[0] && hsvPixel[0] <= upperGreen[0]) &&
+                (lowerGreen[1] <= hsvPixel[1] && hsvPixel[1] <= upperGreen[1]) &&
+                (lowerGreen[2] <= hsvPixel[2] && hsvPixel[2] <= upperGreen[2])) {
+
+                // ì´ˆë¡ìƒ‰ í”½ì…€ì´ë©´ ê·¸ë¦°ì¹´ìš´íŠ¸++
+                greenCount(gCount);
+                src_green.at<uchar>(j, i) = 255;  // í°ìƒ‰ìœ¼ë¡œ ì„¤ì •(ë§ˆìŠ¤í¬ ì´ë¯¸ì§€ì—ì„œ ì´ˆë¡ìƒ‰ ë¶€ë¶„ì„ ë‚˜íƒ€ë‚´ê¸° ìœ„í•´)
+            }
+        }
+    }
+    cout << "ì „ì²´ í”½ì…€: " << (src.rows * src.cols) << endl;
+    cout << "íƒì§€ëœ ë…¹ìƒ‰ í”½ì…€: " << gCount << endl;
+
+    // ì´ˆë¡ìƒ‰ì´ ì•„ë‹Œ ë¶€ë¶„ì€ ë‹¤ë¥¸ìƒ‰ìœ¼ë¡œ ì„¤ì •
+    Mat resultImg = src.clone();
+    for (int j = 0; j < src.rows; j++) {
+        for (int i = 0; i < src.cols; i++) {
+            if (src_green.at<uchar>(j, i) == 0) {
+                resultImg.at<Vec3b>(j, i) = Vec3b(255, 255, 255);  // í°ìƒ‰ìœ¼ë¡œ ì„¤ì •
+            }
+        }
+    }
+
+    green_percent(src, gCount);
+
+    // ê²°ê³¼ ì´ë¯¸ì§€ë¥¼ í‘œì‹œ
+    imshow("Original Img", src);
+    imshow("Result Img", resultImg);
+    waitKey();
+}
+
+double green_percent(Mat src, int& gCount) {
+    // ì‚¬ì§„ì˜ ë…¹ì„¹ í¼ì„¼íŠ¸ ê³„ì‚°
+    double green_pc = ((double)gCount / (double)(src.rows * src.cols)) * 100;
+    cout << "íƒì§€ëœ ë…¹ìƒ‰ ë¹„ìœ¨: " << green_pc << "%" << endl;
+    return green_pc;
+}
