@@ -5,178 +5,83 @@
 using namespace cv;
 using namespace std;
 
-// 주영
+void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<double>& green_percent, vector<double>& green_progress);
+void calculateGreenPercent(Mat src, int& gCount, vector<double>& green_percent);
+void calculateGreenProgress(vector<int>& green_pixel, vector<double>& green_progress); 
+void drawBarGraph(const vector<double>& data, const string& graphTitle);
 
-void getGreen(Mat src, int& gCount);
-double green_percent(Mat src, int& gCount);
+int main() 
+{
+    // 값을 저장할 벡터
+    vector<int> all_pixel;
+    vector<int> green_pixel;
+    vector<double> green_percent;
+    vector<double> green_progress;
 
-int main() {
+    Mat src0 = imread("강원도0.png");   // 불 나기 전   2018.07
+    Mat src1 = imread("강원도1.png");   // 불난 직후    2019.04
+    Mat src2 = imread("강원도2.png");   // 1년 후      2020.02
+    Mat src3 = imread("강원도3.png");   // 현재        2020.10
+    
+    // 이미지 저장 벡터
+    vector<Mat> images = {src0, src1, src2, src3};
 
-    // 이미지 불러오기
-    Mat bef_src = imread("강원도.png");  //과거
-    Mat aft_src = imread("강원도2.png");  //현재
+    for (const auto& img : images) {
+        if(img.empty()) {
+            cerr << "Image load failed." << endl;
+            return -1;
+        }
+    }
 
-    //이미지 불러오기 실패했을 때
-    if (bef_src.empty() && aft_src.empty()) {
-        cerr << "이미지를 불러올 수 없습니다." << endl;
-        return -1;
+    for (const auto& img : images) {
+        getGreen(img, all_pixel, green_pixel, green_percent, green_progress);
     }
     
-    //그린 픽셀 개수
-    int bef_gCount = 0;
-    int aft_gCount = 0;
-    /*
-    // 이미지를 HSV 색 공간으로 변환
-    Mat bef_hsv, aft_hsv;
-    cvtColor(bef_src, bef_hsv, COLOR_BGR2HSV);
-    cvtColor(aft_src, aft_hsv, COLOR_BGR2HSV);
+    // 그래프 그리기
+    drawBarGraph(vector<double>(all_pixel.begin(), all_pixel.end()), "All Pixels");
+    drawBarGraph(vector<double>(green_pixel.begin(), green_pixel.end()), "Green Pixels");
+    drawBarGraph(green_percent, "Green Percent");
+    drawBarGraph(vector<double>(green_progress.begin(), green_progress.end()), "Green Progress");
 
+    // 결과 출력
+    for(int i = 0; i < all_pixel.size(); i++) {
+        if (i == 0) 
+            cout << "== Begore a wildfire ==" << endl;
+        else if (i == 1) 
+            cout << "== After a wildfire ==" << endl;
+        else if (i == all_pixel.size() - 1) 
+            cout << "==     Present     ==" << endl;
+        else 
+            cout << "== " << i << " Years later ==" << endl;
 
-    // 초록색 픽셀을 저장할 이미지
-    Mat bef_green = Mat::zeros(bef_src.size(), CV_8UC1);
-    Mat aft_green = Mat::zeros(aft_src.size(), CV_8UC1);
-
-    //그린카운트
-    int bef_gCount = 0;
-    int aft_gCount = 0;
-
-
-    // HSV에서 초록색 범위 설정
-    Scalar lowerGreen = Scalar(30, 30, 30);  // 낮은 경계값 (H, S, V)
-    Scalar upperGreen = Scalar(100, 255, 255);  // 높은 경계값 (H, S, V)
-
-
-    // 초록색 픽셀 추출
-    for (int j = 0; j < bef_src.rows; j++) {
-        for (int i = 0; i < bef_src.cols; i++) {
-            Vec3b hsvPixel = bef_hsv.at<Vec3b>(j, i);
-
-            // HSV에서 초록색 픽셀 범위 확인
-            if ((lowerGreen[0] <= hsvPixel[0] && hsvPixel[0] <= upperGreen[0]) &&
-                (lowerGreen[1] <= hsvPixel[1] && hsvPixel[1] <= upperGreen[1]) &&
-                (lowerGreen[2] <= hsvPixel[2] && hsvPixel[2] <= upperGreen[2])) {
-                
-                // 초록색 픽셀이면 그린카운트++
-                bef_gCount++;
-                bef_green.at<uchar>(j, i) = 255;  // 흰색으로 설정(마스크 이미지에서 초록색 부분을 나타내기 위해)
-            }
-        }
+        cout << "   All pixel : " << all_pixel[i] << endl;
+        cout << "   Green pixel : " << green_pixel[i] << endl;
+        cout << "   Green percent " << green_percent[i] << "%" << endl;
     }
 
-    cout << "전체 픽셀: " << (bef_src.rows * bef_src.cols) << endl;
-    cout << "탐지된 녹색 픽셀: " << bef_gCount << endl;
-
-    // 초록색이 아닌 부분은 회색으로 설정
-    Mat resultImg = bef_src.clone();
-    for (int j = 0; j < bef_src.rows; j++) {
-        for (int i = 0; i < bef_src.cols; i++) {
-            if (bef_green.at<uchar>(j, i) == 0) {
-                resultImg.at<Vec3b>(j, i) = Vec3b(255, 255, 255);  // 회색으로 설정
-            }
-        }
+    for(int i = 0; i < green_progress.size(); i++) {
+        cout << "   Green progress : " << green_progress[i] << "%" << endl;
     }
-    */
 
-    getGreen(bef_src, bef_gCount);
-    getGreen(aft_src, aft_gCount);
-
-    /*
-    // 사진의 녹섹 퍼센트 계산
-    double green_percent = ((double)bef_gCount /(double)(bef_src.rows * bef_src.cols)) * 100;
-    cout << "탐지된 녹색 비율: " << green_percent << "%" << endl;
-    */
+    waitKey();
+    destroyAllWindows();
 
     return 0;
 }
 
-//greenCount 는 여러 초록 사진의 픽셀 값을 알아내서 각 사진마다 몇 퍼센트 차이가 나는지 알아야하기 때문에 필요하다....
+int i = 0;  // 이미지 번호
 
-/*
-
-초반에 만든 rgb를 이용한 색 추출하기,,,
-풀밭 초원에서는 레드랑 블루도 어느정도 높아야 초록색이 다 나오는데
-이미지를 갈색 나무가 좀 들어간 숲으로 바꾸면 빨간색이 높은 탓에 나무도 같이 추출이 되더라고용?
-그래서 hsv로 추출하는 것으로 바꿨습니다.
-
-#include <opencv2/opencv.hpp>
-#include <iostream>
-
-using namespace cv;
-using namespace std;
-
-void main()
-{
-    //이미지 불러오기
-    Mat src = imread("미국2017.png");
-
-    //이미지 불러오기 실패시
-    if (src.empty()) {
-        cerr << "이미지를 불러올 수 없습니다!!!" << endl;
-        return;
-    }
-
-    //이미지의 폭과 높이
-    int w = src.cols;
-    int h = src.rows;
-
-    int greenCount = 0;
-
-
-
-
-    for (int j = 0; j < h; j++) {
-        for (int i = 0; i < w; i++) {
-            Vec3b& pixel = src.at<Vec3b>(j, i);
-            uchar b = pixel[0];
-            uchar g = pixel[1];
-            uchar r = pixel[2];
-
-            uchar gray = (uchar)((b + g + r) / 3);
-
-            if ((50 <= g && g <= 255) && (b <= 60) && (r <= 60)) {
-                greenCount++;
-            }
-            else {
-                pixel[0] = gray;
-                pixel[1] = gray;
-                pixel[2] = gray;
-            }
-        }
-    }
-
-    cout << "탐지된 녹색 픽셀: " << greenCount << endl;
-
-
-
-    // 결과 이미지 표시
-
-        imshow("green", src);
-
-
-        waitKey();
-        destroyWindow;
-}
-
-
-*/
-
-int greenCount(int& g_Count) {
-    g_Count++;
-    return g_Count;
-}
-
-void getGreen(Mat src, int& gCount) {
-    // 이미지를 HSV 색 공간으로 변환
-    Mat src_hsv;
+void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<double>& green_percent, vector<double>& green_progress) {
+    Mat src_hsv;                                            // 이미지를 HSV 색 공간으로 변환
     cvtColor(src, src_hsv, COLOR_BGR2HSV);
 
-    // 초록색 픽셀을 저장할 이미지
-    Mat src_green = Mat::zeros(src_hsv.size(), CV_8UC1);
+    Mat src_green = Mat::zeros(src_hsv.size(), CV_8UC1);    // 초록색 픽셀을 저장할 이미지
 
     // HSV에서 초록색 범위 설정
-    Scalar lowerGreen = Scalar(30, 30, 30);  // 낮은 경계값 (H, S, V)
-    Scalar upperGreen = Scalar(90, 255, 255);  // 높은 경계값 (H, S, V)
+    Scalar lowerGreen = Scalar(30, 30, 30);                 // 낮은 경계값 (H, S, V)
+    Scalar upperGreen = Scalar(90, 255, 255);               // 높은 경계값 (H, S, V)
 
+    int gCount = 0;
     for (int j = 0; j < src.rows; j++) {
         for (int i = 0; i < src.cols; i++) {
             Vec3b hsvPixel = src_hsv.at<Vec3b>(j, i);
@@ -186,36 +91,90 @@ void getGreen(Mat src, int& gCount) {
                 (lowerGreen[1] <= hsvPixel[1] && hsvPixel[1] <= upperGreen[1]) &&
                 (lowerGreen[2] <= hsvPixel[2] && hsvPixel[2] <= upperGreen[2])) {
 
-                // 초록색 픽셀이면 그린카운트++
-                greenCount(gCount);
-                src_green.at<uchar>(j, i) = 255;  // 흰색으로 설정(마스크 이미지에서 초록색 부분을 나타내기 위해)
+                gCount++;                           // 초록색 픽셀이면 그린카운트++
+                src_green.at<uchar>(j, i) = 255;    // 흰색으로 설정(마스크 이미지에서 초록색 부분을 나타내기 위해)
             }
         }
     }
-    cout << "전체 픽셀: " << (src.rows * src.cols) << endl;
-    cout << "탐지된 녹색 픽셀: " << gCount << endl;
 
-    // 초록색이 아닌 부분은 다른색으로 설정
+    int allpixel = (src.rows * src.cols);
+
+    all_pixel.push_back(allpixel);
+    green_pixel.push_back(gCount);
+
     Mat resultImg = src.clone();
+    
+    // 초록색이 아닌 부분은 흰색으로 설정
     for (int j = 0; j < src.rows; j++) {
         for (int i = 0; i < src.cols; i++) {
             if (src_green.at<uchar>(j, i) == 0) {
-                resultImg.at<Vec3b>(j, i) = Vec3b(255, 255, 255);  // 흰색으로 설정
+                resultImg.at<Vec3b>(j, i) = Vec3b(255, 255, 255);
             }
         }
     }
 
-    green_percent(src, gCount);
+    calculateGreenPercent(src, gCount, green_percent);
+    calculateGreenProgress(green_pixel, green_progress);
 
     // 결과 이미지를 표시
-    imshow("Original Img", src);
-    imshow("Result Img", resultImg);
-    waitKey();
+    imshow("Original Img" + to_string(i), src);
+    imshow("Result Img" + to_string(i), resultImg);
+
+    i++;
 }
 
-double green_percent(Mat src, int& gCount) {
-    // 사진의 녹섹 퍼센트 계산
+// 사진의 녹섹 퍼센트 계산
+void calculateGreenPercent(Mat src, int& gCount, vector<double>& green_percent) {
     double green_pc = ((double)gCount / (double)(src.rows * src.cols)) * 100;
-    cout << "탐지된 녹색 비율: " << green_pc << "%" << endl;
-    return green_pc;
+
+    green_percent.push_back(green_pc);
+}
+
+// 변화율 계산
+void calculateGreenProgress(vector<int> &green_pixel, vector<double> &green_progress)
+{
+    green_progress.clear();
+    double gprogress;
+    for(int i = 1; i < green_pixel.size() - 1; i++) {
+        gprogress = ((double)(green_pixel[i+1] - green_pixel[i]) / green_pixel[0]) * 100;
+
+        green_progress.push_back(gprogress);
+    }
+}
+
+// 그래프 그리기
+void drawBarGraph(const vector<double>& data, const string& graphTitle) {
+    int graphHeight = 400;
+    int graphWidth = 400;
+    int barWidth = cvRound((double)graphWidth / data.size());
+    int axisThick = 2;
+
+    Mat graphImg(graphHeight + 20, graphWidth + 40, CV_8UC3, Scalar(255, 255, 255));
+
+    // 데이터의 최대값을 찾아서 그래프의 스케일을 결정
+    double maxVal = *max_element(data.begin(), data.end());
+
+    // 막대 그리기
+    for (size_t i = 0; i < data.size(); i++) {
+        int barHeight = cvRound((data[i] / maxVal) * (graphHeight - 150));
+        rectangle(graphImg, Point(i * barWidth + 21, graphHeight - barHeight),
+                  Point((i + 1) * barWidth, graphHeight), Scalar(100, 200, 100), FILLED);
+    }
+
+    // x축과 y축
+    line(graphImg, Point(20, 0), Point(20, graphHeight), Scalar(0, 0, 0), axisThick);
+    line(graphImg, Point(20, graphHeight), Point(graphWidth + 20, graphHeight), Scalar(0, 0, 0), axisThick);
+
+    // 축 레이블 추가
+    for (size_t i = 0; i < data.size(); i++) {
+        int num = cvRound(data[i]);
+        string text = to_string(num);
+        putText(graphImg, text, Point(i * barWidth + 25, graphHeight - 5), FONT_HERSHEY_PLAIN, 1, Scalar(0, 0, 255));
+    }
+
+    // 그래프 제목 추가
+    putText(graphImg, graphTitle, Point(20, 15), FONT_HERSHEY_PLAIN, 1, Scalar(255, 0, 0));
+
+    // 그래프 이미지
+    imshow(graphTitle, graphImg);
 }
