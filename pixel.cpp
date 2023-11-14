@@ -46,7 +46,7 @@ int main()
     // 결과 출력
     for(int i = 0; i < all_pixel.size(); i++) {
         if (i == 0) 
-            cout << "== Begore a wildfire ==" << endl;
+            cout << "== Before a wildfire ==" << endl;
         else if (i == 1) 
             cout << "== After a wildfire ==" << endl;
         else if (i == all_pixel.size() - 1) 
