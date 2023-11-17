@@ -1,0 +1,31 @@
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.upload-container {
+  margin-bottom: 20px;
+  left: 10px;
+}
+
+.images-preview-container {
+  display: flex;
+  justify-content: center;
+}
+
+.image-preview {
+  margin: 0 10px; 
+}
+
+.image-preview img {
+  max-width: 200px;
+  height: auto;
+  display: block;
+}
+
