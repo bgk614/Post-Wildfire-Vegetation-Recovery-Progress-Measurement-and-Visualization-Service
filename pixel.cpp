@@ -11,6 +11,7 @@ void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<
 void calculateGreenPercent(Mat src, int& gCount, vector<double>& green_percent);
 void calculateGreenProgress(vector<int>& green_pixel, vector<double>& green_progress); 
 string saveGreenImage(Mat& resultImg, int& index);
+void removeMultiplicativeNoise(Mat& img)
 
 int i = 0;  // 이미지 번호
 
@@ -73,11 +74,6 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
-"feat: Gaussian filter 로 가우시안 블러를 적용하여 고주파 잡음을 완화
-    
-    Multiplicative noise를 제거하여 이미지의 품질을 향상시키는 기능 추가
-
 
 void removeMultiplicativeNoise(Mat& img) {
     // 가우시안 블러를 적용하여 고주파 잡음을 완화
