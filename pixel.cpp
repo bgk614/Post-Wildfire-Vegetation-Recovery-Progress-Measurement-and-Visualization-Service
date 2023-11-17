@@ -74,8 +74,19 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+"feat: Gaussian filter 로 가우시안 블러를 적용하여 고주파 잡음을 완화
+    
+    Multiplicative noise를 제거하여 이미지의 품질을 향상시키는 기능 추가
+
+
+void removeMultiplicativeNoise(Mat& img) {
+    // 가우시안 블러를 적용하여 고주파 잡음을 완화
+    GaussianBlur(img, img, Size(5, 5), 0);
+}
+
 // 사진의 녹색 픽셀 추출
 void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<double>& green_percent, vector<double>& green_progress) {
+    removeMultiplicativeNoise(src);                         // 이미지에 multiplicative noise 제거
     Mat src_hsv;                                            // 이미지를 HSV 색 공간으로 변환
     cvtColor(src, src_hsv, COLOR_BGR2HSV);
 
