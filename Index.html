@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>greenProgress</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <form id="uploadForm" action="/upload" enctype="multipart/form-data">
+        <input type="file" id="pastImage" name="images" accept="image/*" multiple><br><br>
+        <input type="file" id="fireImage" name="images" accept="image/*" multiple><br><br>
+        <input type="file" id="1YearlaterImage" name="images" accept="image/*" multiple><br><br>
+        <input type="file" id="presentImage" name="images" accept="image/*" multiple><br><br>
+        <button type="submit">Upload Images</button>
+    </form>
+    <div class="images-preview-container">
+        <div class="image-preview" id="imagePreview1">
+            <h3>Past Image</h3>
+            <img src="" alt="Past Image Preview" id="pastImageDisplay">
+        </div>
+        <div class="image-preview" id="imagePreview2">
+            <h3>Image After Fire</h3>
+            <img src="" alt="Fire Image Preview" id="fireImageDisplay">
+        </div>
+        <div class="image-preview" id="imagePreview3">
+            <h3>1 Year Later Image</h3>
+            <img src="" alt="1 Year Later Image Preview" id="1YearlaterImageDisplay">
+        </div>
+        <div class="image-preview" id="imagePreview4">
+            <h3>Present Image</h3>
+            <img src="" alt="Present Image Preview" id="presentImageDisplay">
+        </div>
+    </div>
+    <div class="images-preview-container">
+        <div class="image-preview" id="imagePreview1">
+            <h3>Past Image green pixel</h3>
+            <img src="" alt="Past Image Preview" id="pastImageDisplay">
+        </div>
+        <div class="image-preview" id="imagePreview2">
+            <h3>Image After Fire green pixel</h3>
+            <img src="" alt="Fire Image Preview" id="fireImageDisplay">
+        </div>
+        <div class="image-preview" id="imagePreview3">
+            <h3>1 Year Later Image green pixel</h3>
+            <img src="" alt="1 Year Later Image Preview" id="1YearlaterImageDisplay">
+        </div>
+        <div class="image-preview" id="imagePreview4">
+            <h3>Present Image green pixel</h3>
+            <img src="" alt="Present Image Preview" id="presentImageDisplay">
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <div id="results">
+        <h3>Results</h3>
+        <p id="allPixel">All Pixels: </p>
+        <p id="greenPixel">Green Pixels: </p>
+        <p id="greenPercent">Green Percent: </p>
+        <p id="greenProgress">Green Progress: </p>
+    </div>
+    
+</body>
+</html>
