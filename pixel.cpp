@@ -10,8 +10,9 @@ using namespace std;
 void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<double>& green_percent, vector<double>& green_progress);
 void calculateGreenPercent(Mat src, int& gCount, vector<double>& green_percent);
 void calculateGreenProgress(vector<int>& green_pixel, vector<double>& green_progress); 
+void removeMultiplicativeNoise(Mat& img);
 string saveGreenImage(Mat& resultImg, int& index);
-void removeMultiplicativeNoise(Mat& img)
+string saveChangeImage(Mat& afterImg, int& index);
 
 int i = 0;  // 이미지 번호
 
@@ -129,6 +130,9 @@ void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<
 
     string result = saveGreenImage(resultImg, i);
 
+    // 첫 이미지를 제외한 2번째 마다 차이 이미지 생성
+    if (i > 1) { string changeResult = saveChangeImage(resultImg, i); }
+
     i++;
 }
 
@@ -156,4 +160,33 @@ string saveGreenImage(Mat& resultImg, int& index) {
     string outputPath = "./greenArea_" + to_string(index) + ".jpg";
     imwrite(outputPath, resultImg);     // 결과 이미지를 파일로 저장
     return outputPath;                  // 저장된 이미지의 경로 반환
+}
+
+// 차이 이미지를 저장하고 경로를 반환하는 부분
+string saveChangeImage(Mat& afterImg, int& index) {
+    string beforPath = "greenArea_" + to_string(index - 1) + ".jpg";
+    Mat beforImg = imread(beforPath);
+
+    imshow("bef", beforImg);
+    waitKey(0);
+
+    Mat changeImg = Mat::zeros(beforImg.size(), CV_8UC3);
+
+    for (int j = 0; j < beforImg.rows; j++) {
+        for (int i = 0; i < beforImg.cols; i++) {
+            Vec3b& BeforeGreen = beforImg.at<Vec3b>(j, i);
+            Vec3b& AfterGreen = afterImg.at<Vec3b>(j, i);
+            Vec3b& changeGreen = changeImg.at<Vec3b>(j, i);
+
+            if ((BeforeGreen[0] == 255 && BeforeGreen[1] == 255 && BeforeGreen[2] == 255) &&
+                (AfterGreen[0] != 255 && AfterGreen[1] != 255 && AfterGreen[2] != 255)) {
+                changeGreen = Vec3b(0, 114, 255);
+            }
+            else { changeGreen = Vec3b(255, 255, 255); }
+        }
+    }
+
+    string outputPath = "./changeArea_" + to_string(index - 1) + "_" + to_string(index) + ".jpg";
+    imwrite(outputPath, changeImg);
+    return outputPath;
 }
