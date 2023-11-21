@@ -14,7 +14,7 @@ void removeMultiplicativeNoise(Mat& img);
 string saveGreenImage(Mat& resultImg, int& index);
 string saveChangeImage(Mat& afterImg, int& index);
 
-int i = 0;  // 이미지 번호
+int i = 0; 
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -37,7 +37,6 @@ int main(int argc, char* argv[]) {
         savedImages.push_back(saveGreenImage(img, i));
     }
 
-        // JSON 형식으로 결과 출력
         cout << "{";
 
         cout << "\"all_pixel\": [";
@@ -64,7 +63,6 @@ int main(int argc, char* argv[]) {
         }
         cout << "],"; 
 
-        // 저장된 이미지 경로 출력
         cout << "\"savedImages\": [";
         for (size_t i = 0; i < savedImages.size(); ++i) {
             cout << "\"" << savedImages[i] << "\"" << (i < savedImages.size() - 1 ? ", " : "");
@@ -76,14 +74,14 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+// 가우시안 블러를 적용하여 고주파 잡음을 완화
 void removeMultiplicativeNoise(Mat& img) {
-    // 가우시안 블러를 적용하여 고주파 잡음을 완화
     GaussianBlur(img, img, Size(5, 5), 0);
 }
 
 // 사진의 녹색 픽셀 추출
 void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<double>& green_percent, vector<double>& green_progress) {
-    removeMultiplicativeNoise(src);                         // 이미지에 multiplicative noise 제거
+      removeMultiplicativeNoise(src);                       // 이미지에 multiplicative noise 제거
     Mat src_hsv;                                            // 이미지를 HSV 색 공간으로 변환
     cvtColor(src, src_hsv, COLOR_BGR2HSV);
 
@@ -130,7 +128,7 @@ void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<
 
     string result = saveGreenImage(resultImg, i);
 
-    // 첫 이미지를 제외한 2번째 마다 차이 이미지 생성
+    // 2번째 마다 차이 이미지 생성
     if (i > 1) { string changeResult = saveChangeImage(resultImg, i); }
 
     i++;
@@ -139,7 +137,6 @@ void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<
 // 사진의 녹섹 퍼센트 계산
 void calculateGreenPercent(Mat src, int& gCount, vector<double>& green_percent) {
     double green_pc = ((double)gCount / (double)(src.rows * src.cols)) * 100;
-
     green_percent.push_back(green_pc);
 }
 
@@ -166,10 +163,6 @@ string saveGreenImage(Mat& resultImg, int& index) {
 string saveChangeImage(Mat& afterImg, int& index) {
     string beforPath = "greenArea_" + to_string(index - 1) + ".jpg";
     Mat beforImg = imread(beforPath);
-
-    imshow("bef", beforImg);
-    waitKey(0);
-
     Mat changeImg = Mat::zeros(beforImg.size(), CV_8UC3);
 
     for (int j = 0; j < beforImg.rows; j++) {
