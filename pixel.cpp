@@ -7,43 +7,152 @@
 using namespace cv;
 using namespace std;
 
-void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<double>& green_percent, vector<double>& green_progress);
-void calculateGreenPercent(Mat src, int& gCount, vector<double>& green_percent);
-void calculateGreenProgress(vector<int>& green_pixel, vector<double>& green_progress); 
+void resizeImage(Mat& img);
 void removeMultiplicativeNoise(Mat& img);
-string saveGreenImage(Mat& resultImg, int& index);
-string saveChangeImage(Mat& afterImg, int& index);
+void getGreen(Mat& img, vector<int>& green_pixel);
+void calculateGreenSimilarPercent(vector<int>& green_pixel, vector<double>& green_similar_percent);
+void calculateGreenProgress(vector<int>& green_pixel, vector<double>& green_progress);
+void saveChangeImage(vector<int>& green_pixel);
+void jsonReport();
+void updatePaths(int& img_num);
+bool isInColorRange(const Vec3b& pixel, const Scalar& lower_bound, const Scalar& upper_bound);
+bool isWhite(const Vec3b& color);
 
-int i = 0; 
+vector<int> green_pixel;
+vector<double> green_similar_percent, green_progress;
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        cerr << "Usage: " << argv[0] << " <image1> <image2> ..." << endl;
-        return 1;
-    }
+const Vec3b WHITE  = Vec3b(255, 255, 255);
+const Vec3b ORANGE = Vec3b(0, 114, 255);
+const Vec3b BLUE = Vec3b(208, 146, 8);
+int min_width  = INT_MAX;
+int min_height = INT_MAX;
+int img_num = 1; 
+Mat img;
 
-    vector<int> all_pixel, green_pixel;
-    vector<double> green_percent, green_progress;
-    vector<string> savedImages; 
+string green_output_path  = "./project/greenPixelImage/greenArea_" + to_string(img_num) + ".jpg";
+string before_path        = "./project/greenPixelImage/greenArea_" + to_string(img_num - 1) + ".jpg";
+string change_output_path = "./project/changeImage/changeArea_" + to_string(img_num - 1) + "_" + to_string(img_num) + ".jpg";
 
+int main(int argc, char* argv[]) 
+{
     for (int i = 1; i < argc; i++) {
-        Mat img = imread(argv[i]);
+        img = imread(argv[i]);
         if (img.empty()) {
             cerr << "Image load failed: " << argv[i] << endl;
             return -1;
         }
-
-        getGreen(img, all_pixel, green_pixel, green_percent, green_progress);
-        savedImages.push_back(saveGreenImage(img, i));
+        if (img.cols < min_width)  min_width  = img.cols;
+        if (img.rows < min_height) min_height = img.rows;
     }
+    
+    green_pixel.clear();
+    green_progress.clear();
+    green_similar_percent.clear();
 
-        cout << "{";
+    for (img_num = 1; img_num < argc; img_num++) {
+        img = imread(argv[img_num]);
+        updatePaths(img_num);
+        resizeImage(img);
+        removeMultiplicativeNoise(img);
+        getGreen(img, green_pixel);
+        calculateGreenSimilarPercent(green_pixel, green_similar_percent);
+    }
+    for (img_num = 2; img_num < argc; img_num++) {
+        updatePaths(img_num);
+        calculateGreenProgress(green_pixel, green_progress);
+        saveChangeImage(green_pixel);
+    }
+    jsonReport();
+    return 0;
+}
 
-        cout << "\"all_pixel\": [";
-        for (size_t i = 0; i < all_pixel.size(); ++i) {
-            cout << all_pixel[i] << (i < all_pixel.size() - 1 ? ", " : "");
+void resizeImage(Mat& img) {
+    resize(img, img, Size(min_width, min_height));
+}
+
+void removeMultiplicativeNoise(Mat& img) {
+    GaussianBlur(img, img, Size(3, 3), 0);
+}
+
+void getGreen(Mat& img, vector<int>& green_pixel) {
+    int green_count = 0;
+    Mat img_hsv   = img.clone();
+    Mat green_img = img.clone();                // 초록색 픽셀을 저장할 이미지
+
+    cvtColor(img, img_hsv, COLOR_BGR2HSV);      // 이미지를 HSV 색 공간으로 변환 
+    
+    // HSV에서 초록색 범위 설정
+    Scalar lower_green = Scalar(30, 30, 30);    // 낮은 경계값 (H, S, V)
+    Scalar upper_green = Scalar(90, 255, 255);  // 높은 경계값 (H, S, V)
+
+    for (int j = 0; j < img_hsv.rows; j++) {
+        for (int i = 0; i < img_hsv.cols; i++) {
+            Vec3b hsv_pixel = img_hsv.at<Vec3b>(j, i);
+            
+            // HSV에서 초록색 픽셀 범위 확인
+            if (isInColorRange(hsv_pixel, lower_green, upper_green)) {
+                green_count++;
+            } else {
+                green_img.at<Vec3b>(j, i) = WHITE;
+            }
         }
-        cout << "],";
+    }   
+    green_pixel.push_back(green_count);
+    imwrite(green_output_path, green_img);
+}
+
+bool isInColorRange(const Vec3b& pixel, const Scalar& lower_bound, const Scalar& upper_bound) {
+    return (lower_bound[0] <= pixel[0] && pixel[0] <= upper_bound[0]) &&
+           (lower_bound[1] <= pixel[1] && pixel[1] <= upper_bound[1]) &&
+           (lower_bound[2] <= pixel[2] && pixel[2] <= upper_bound[2]);
+}
+
+void calculateGreenSimilarPercent(vector<int>& green_pixel, vector<double>& green_similar_percent) {
+    double green_similarity_rate = ((double)(green_pixel[img_num - 1]) / (green_pixel[0])) * 100;
+    green_similar_percent.push_back(green_similarity_rate);
+}
+
+void calculateGreenProgress(vector<int>& green_pixel, vector<double>& green_progress) {
+    double progress = ((double)(green_pixel[img_num - 1] - green_pixel[img_num - 2]) / green_pixel[0]) * 100;
+    green_progress.push_back(progress);
+}
+
+void saveChangeImage(vector<int>& green_pixel) {
+    Mat before_img = imread(before_path);
+    Mat after_img  = imread(green_output_path);
+
+    Mat change_img = Mat::zeros(img.size(), CV_8UC3);
+
+    for (int j = 0; j < before_img.rows; j++) {
+        for (int i = 0; i < before_img.cols; i++) {
+            Vec3b& before_green =  before_img.at<Vec3b>(j, i);
+            Vec3b& after_green  =  after_img.at<Vec3b>(j, i);
+            if (green_pixel[img_num - 2] < green_pixel[img_num - 1]) {
+                if (isWhite(before_green) && !isWhite(after_green)) {
+                    change_img.at<Vec3b>(j, i) = ORANGE;
+                } else {
+                    change_img.at<Vec3b>(j, i) = WHITE;
+                }
+            } else {
+                if (!isWhite(before_green) && isWhite(after_green)) {
+                    change_img.at<Vec3b>(j, i) = BLUE;
+                } else {
+                    change_img.at<Vec3b>(j, i) = WHITE;
+                }
+            }
+        }
+    }
+    imwrite(change_output_path, change_img);
+}
+
+bool isWhite(const Vec3b& color) {
+    return color[0] == 255 && color[1] == 255 && color[2] == 255;
+}
+
+void jsonReport() {
+    cout << "{";
+        
+        cout << "\"all_pixel\": [" << (img.cols * img.rows) << "],";
 
         cout << "\"green_pixel\": [";
         for (size_t i = 0; i < green_pixel.size(); ++i) {
@@ -51,9 +160,9 @@ int main(int argc, char* argv[]) {
         }
         cout << "],";
 
-        cout << "\"green_percent\": [";
-        for (size_t i = 0; i < green_percent.size(); ++i) {
-            cout << green_percent[i] << (i < green_percent.size() - 1 ? ", " : "");
+        cout << "\"green_similar_percent\": [";
+        for (size_t i = 0; i < green_similar_percent.size(); ++i) {
+            cout << green_similar_percent[i] << (i < green_similar_percent.size() - 1 ? ", " : "");
         }
         cout << "],";
 
@@ -61,125 +170,13 @@ int main(int argc, char* argv[]) {
         for (size_t i = 0; i < green_progress.size(); ++i) {
             cout << green_progress[i] << (i < green_progress.size() - 1 ? ", " : "");
         }
-        cout << "],"; 
+        cout << "]"; 
 
-        cout << "\"savedImages\": [";
-        for (size_t i = 0; i < savedImages.size(); ++i) {
-            cout << "\"" << savedImages[i] << "\"" << (i < savedImages.size() - 1 ? ", " : "");
-        }
-        cout << "]";
-
-        cout << "}";
-
-    return 0;
+    cout << "}";
 }
 
-// 가우시안 블러를 적용하여 고주파 잡음을 완화
-void removeMultiplicativeNoise(Mat& img) {
-    GaussianBlur(img, img, Size(5, 5), 0);
-}
-
-// 사진의 녹색 픽셀 추출
-void getGreen(Mat src, vector<int>& all_pixel, vector<int>& green_pixel, vector<double>& green_percent, vector<double>& green_progress) {
-      removeMultiplicativeNoise(src);                       // 이미지에 multiplicative noise 제거
-    Mat src_hsv;                                            // 이미지를 HSV 색 공간으로 변환
-    cvtColor(src, src_hsv, COLOR_BGR2HSV);
-
-    Mat src_green = Mat::zeros(src_hsv.size(), CV_8UC1);    // 초록색 픽셀을 저장할 이미지
-
-    // HSV에서 초록색 범위 설정
-    Scalar lowerGreen = Scalar(30, 30, 30);                 // 낮은 경계값 (H, S, V)
-    Scalar upperGreen = Scalar(90, 255, 255);               // 높은 경계값 (H, S, V)
-
-    int gCount = 0;
-    for (int j = 0; j < src.rows; j++) {
-        for (int i = 0; i < src.cols; i++) {
-            Vec3b hsvPixel = src_hsv.at<Vec3b>(j, i);
-
-            // HSV에서 초록색 픽셀 범위 확인
-            if ((lowerGreen[0] <= hsvPixel[0] && hsvPixel[0] <= upperGreen[0]) &&
-                (lowerGreen[1] <= hsvPixel[1] && hsvPixel[1] <= upperGreen[1]) &&
-                (lowerGreen[2] <= hsvPixel[2] && hsvPixel[2] <= upperGreen[2])) {
-
-                gCount++;                           // 초록색 픽셀이면 그린카운트++
-                src_green.at<uchar>(j, i) = 255;    // 흰색으로 설정(마스크 이미지에서 초록색 부분을 나타내기 위해)
-            }
-        }
-    }
-
-    int allpixel = (src.rows * src.cols);
-
-    all_pixel.push_back(allpixel);
-    green_pixel.push_back(gCount);
-
-    Mat resultImg = src.clone();
-    
-    // 초록색이 아닌 부분은 흰색으로 설정
-    for (int j = 0; j < src.rows; j++) {
-        for (int i = 0; i < src.cols; i++) {
-            if (src_green.at<uchar>(j, i) == 0) {
-                resultImg.at<Vec3b>(j, i) = Vec3b(255, 255, 255);
-            }
-        }
-    }
-
-    calculateGreenPercent(src, gCount, green_percent);
-    calculateGreenProgress(green_pixel, green_progress);
-
-    string result = saveGreenImage(resultImg, i);
-
-    // 2번째 마다 차이 이미지 생성
-    if (i > 1) { string changeResult = saveChangeImage(resultImg, i); }
-
-    i++;
-}
-
-// 사진의 녹섹 퍼센트 계산
-void calculateGreenPercent(Mat src, int& gCount, vector<double>& green_percent) {
-    double green_pc = ((double)gCount / (double)(src.rows * src.cols)) * 100;
-    green_percent.push_back(green_pc);
-}
-
-// 변화율 계산
-void calculateGreenProgress(vector<int> &green_pixel, vector<double> &green_progress)
-{
-    green_progress.clear();
-    double gprogress;
-    for(int i = 1; i < green_pixel.size() - 1; i++) {
-        gprogress = ((double)(green_pixel[i+1] - green_pixel[i]) / green_pixel[0]) * 100;
-
-        green_progress.push_back(gprogress);
-    }
-}
-
-// 초록색 픽셀만 추출한 이미지를 저장하고 경로를 반환하는 부분
-string saveGreenImage(Mat& resultImg, int& index) {
-    string outputPath = "./greenArea_" + to_string(index) + ".jpg";
-    imwrite(outputPath, resultImg);     // 결과 이미지를 파일로 저장
-    return outputPath;                  // 저장된 이미지의 경로 반환
-}
-
-// 차이 이미지를 저장하고 경로를 반환하는 부분
-string saveChangeImage(Mat& afterImg, int& index) {
-    string beforPath = "greenArea_" + to_string(index - 1) + ".jpg";
-    Mat beforImg = imread(beforPath);
-    Mat changeImg = Mat::zeros(beforImg.size(), CV_8UC3);
-
-    for (int j = 0; j < beforImg.rows; j++) {
-        for (int i = 0; i < beforImg.cols; i++) {
-            Vec3b& BeforeGreen = beforImg.at<Vec3b>(j, i);
-            Vec3b& AfterGreen = afterImg.at<Vec3b>(j, i);
-            Vec3b& changeGreen = changeImg.at<Vec3b>(j, i);
-
-            if ((BeforeGreen[0] == 255 && BeforeGreen[1] == 255 && BeforeGreen[2] == 255) &&
-                (AfterGreen[0] != 255 && AfterGreen[1] != 255 && AfterGreen[2] != 255)) {
-                changeGreen = Vec3b(0, 114, 255);
-            }
-            else { changeGreen = Vec3b(255, 255, 255); }
-        }
-    }
-
-    string outputPath = "./changeArea_" + to_string(index - 1) + "_" + to_string(index) + ".jpg";
-    imwrite(outputPath, changeImg);
-    return outputPath;
+void updatePaths(int& img_num) {
+    green_output_path  = "./project/greenPixelImage/greenArea_" + to_string(img_num) + ".jpg";
+    before_path        = "./project/greenPixelImage/greenArea_" + to_string(img_num - 1) + ".jpg";
+    change_output_path = "./project/changeImage/changeArea_" + to_string(img_num - 1) + "_" + to_string(img_num) + ".jpg";
 }
