@@ -29,6 +29,7 @@ int min_height = INT_MAX;
 int img_num = 1; 
 Mat img;
 
+string src_output_path    = "./project/srcImage/srcImage_" + to_string(img_num) + ".jpg";
 string green_output_path  = "./project/greenPixelImage/greenArea_" + to_string(img_num) + ".jpg";
 string before_path        = "./project/greenPixelImage/greenArea_" + to_string(img_num - 1) + ".jpg";
 string change_output_path = "./project/changeImage/changeArea_" + to_string(img_num - 1) + "_" + to_string(img_num) + ".jpg";
@@ -54,11 +55,12 @@ int main(int argc, char* argv[])
         updatePaths(img_num);
         resizeImage(img);
         removeMultiplicativeNoise(img);
+        imwrite(src_output_path, img);
         getGreen(img, green_pixel);
-        calculateGreenSimilarPercent(green_pixel, green_similar_percent);
     }
     for (img_num = 2; img_num < argc; img_num++) {
         updatePaths(img_num);
+        calculateGreenSimilarPercent(green_pixel, green_similar_percent);
         calculateGreenProgress(green_pixel, green_progress);
         saveChangeImage(green_pixel);
     }
@@ -176,6 +178,7 @@ void jsonReport() {
 }
 
 void updatePaths(int& img_num) {
+    src_output_path    = "./project/srcImage/srcImage_" + to_string(img_num) + ".jpg";
     green_output_path  = "./project/greenPixelImage/greenArea_" + to_string(img_num) + ".jpg";
     before_path        = "./project/greenPixelImage/greenArea_" + to_string(img_num - 1) + ".jpg";
     change_output_path = "./project/changeImage/changeArea_" + to_string(img_num - 1) + "_" + to_string(img_num) + ".jpg";
