@@ -6,26 +6,58 @@ body {
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  height: 100vh;
 }
 
-.upload-container {
+#Image {
+  margin-top: 50px;
+}
+#uploadForm {
+  width: 600px; 
   margin-bottom: 20px;
-  left: 10px;
+  margin-top: 30px;
 }
 
-.images-preview-container {
+.image-container div {
+  overflow-x: scroll;
+  justify-content: flex-start;
   display: flex;
-  justify-content: center;
+  height: 100px; 
+  width: 600px; 
+  margin-bottom: 2px;
 }
 
-.image-preview {
-  margin: 0 10px; 
+.image-container img {
+  width: 142px;
+  height: 100px;
+  margin: 2px;
 }
 
-.image-preview img {
-  max-width: 200px;
-  height: auto;
-  display: block;
+#results {
+  width: 600px; 
+}
+#resultText {
+  white-space: nowrap;
+  overflow-x: auto;
+}
+#allPixel {
+  margin-top: 10px;
+}
+#greenProgress {
+  margin-bottom: 20px;
 }
 
+.chart-container canvas {
+  max-width: 190px; 
+  max-height: 185px; 
+  margin: 5;
+}
+
+.chart-container {
+  display: flex;
+  width: 600px; 
+  height: 185px; 
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 15px;
+  margin-bottom: 20px;
+}
