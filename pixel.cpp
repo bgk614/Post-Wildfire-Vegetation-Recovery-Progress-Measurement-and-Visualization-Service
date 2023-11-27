@@ -84,8 +84,8 @@ void getGreen(Mat& img, vector<int>& green_pixel) {
     cvtColor(img, img_hsv, COLOR_BGR2HSV);      // 이미지를 HSV 색 공간으로 변환 
     
     // HSV에서 초록색 범위 설정
-    Scalar lower_green = Scalar(32, 44, 30);    // 낮은 경계값 (H, S, V)
-    Scalar upper_green = Scalar(105, 255, 255);  // 높은 경계값 (H, S, V)
+    Scalar lower_green = Scalar(32, 44, 30);     // 낮은 경계값 (H, S, V)
+    Scalar upper_green = Scalar(100, 255, 255);  // 높은 경계값 (H, S, V)
 
     for (int j = 0; j < img_hsv.rows; j++) {
         for (int i = 0; i < img_hsv.cols; i++) {
