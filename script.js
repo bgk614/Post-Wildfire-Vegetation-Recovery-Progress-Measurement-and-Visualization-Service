@@ -40,20 +40,21 @@ function displayImages(greenPixelCount) {
     changeImageContainer.innerHTML = '';
 
     for (let i = 1; i < greenPixelCount + 1; i++) {
+        const cacheBuster = '?v=' + new Date().getTime() + '_' + i;
+
         const srcImg = new Image();
-        srcImg.src = `./srcImage/srcImage_${i}.jpg`;
+        srcImg.src = `./srcImage/srcImage_${i}.jpg` + cacheBuster;
         srcImageContainer.appendChild(srcImg);
 
         const greenImg = new Image();
-        greenImg.src = `./greenPixelImage/greenArea_${i}.jpg`;
+        greenImg.src = `./greenPixelImage/greenArea_${i}.jpg` + cacheBuster;
         greenImageContainer.appendChild(greenImg);
 
         if (i < greenPixelCount) {
             const changeImg = new Image();
-            changeImg.src = `./changeImage/changeArea_${i}_${i+1}.jpg`;
+            changeImg.src = `./changeImage/changeArea_${i}_${i+1}.jpg` + cacheBuster;
             if (i === 1) changeImg.style.marginLeft = '148px'; 
             changeImageContainer.appendChild(changeImg);
-        
         }
     }
 }
@@ -144,3 +145,4 @@ function chart(data) {
             }
         })
 }
+,
