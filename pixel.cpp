@@ -110,13 +110,21 @@ bool isInColorRange(const Vec3b& pixel, const Scalar& lower_bound, const Scalar&
 }
 
 void calculateGreenSimilarPercent(vector<int>& green_pixel, vector<double>& green_similar_percent) {
-    double green_similarity_rate = ((double)(green_pixel[img_num - 1]) / (green_pixel[0])) * 100;
-    green_similar_percent.push_back(green_similarity_rate);
+    if (green_pixel[0] != 0) {
+        double green_similarity_rate = ((double)(green_pixel[img_num - 1]) / (green_pixel[0])) * 100;
+        green_similar_percent.push_back(green_similarity_rate);
+    } else {
+        green_similar_percent.push_back(0); // 적절한 기본값 처리
+    }
 }
 
 void calculateGreenProgress(vector<int>& green_pixel, vector<double>& green_progress) {
-    double progress = ((double)(green_pixel[img_num - 1] - green_pixel[img_num - 2]) / green_pixel[0]) * 100;
-    green_progress.push_back(progress);
+    if (green_pixel[0] != 0) {
+        double progress = ((double)(green_pixel[img_num - 1] - green_pixel[img_num - 2]) / green_pixel[0]) * 100;
+        green_progress.push_back(progress);
+    } else {
+        green_progress.push_back(0); // 적절한 기본값 처리
+    }
 }
 
 void saveChangeImage(vector<int>& green_pixel) {
